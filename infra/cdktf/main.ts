@@ -38,7 +38,7 @@ class WorkforceManagement extends DefaultTerraformStack {
         this,
         "intances"
       );
-    new aws.identitystoreUser.IdentitystoreUser(this, "baran", {
+    const user = new aws.identitystoreUser.IdentitystoreUser(this, "baran", {
       displayName: "baran",
       identityStoreId: Fn.element(ssoAdminInstances.identityStoreIds, 0),
       name: {
@@ -51,10 +51,14 @@ class WorkforceManagement extends DefaultTerraformStack {
         value: "barankaraaslan@protonmail.com",
       },
     });
-    new aws.identitystoreGroup.IdentitystoreGroup(this, "PlatformEngineers", {
-      displayName: "Platform Engineers",
-      identityStoreId: Fn.element(ssoAdminInstances.identityStoreIds, 1),
-    });
+    const group = new aws.identitystoreGroup.IdentitystoreGroup(
+      this,
+      "PlatformEngineers",
+      {
+        displayName: "Platform Engineers",
+        identityStoreId: Fn.element(ssoAdminInstances.identityStoreIds, 1),
+      }
+    );
     const pmSet = new aws.ssoadminPermissionSet.SsoadminPermissionSet(
       this,
       "PlatformEngineersPS",
@@ -70,6 +74,32 @@ class WorkforceManagement extends DefaultTerraformStack {
         instanceArn: Fn.element(ssoAdminInstances.arns, 0),
         managedPolicyArn: "arn:aws:iam::aws:policy/AdministratorAccess",
         permissionSetArn: pmSet.arn,
+      }
+    );
+
+    const callerId = new aws.dataAwsCallerIdentity.DataAwsCallerIdentity(
+      this,
+      "current"
+    );
+    new aws.ssoadminAccountAssignment.SsoadminAccountAssignment(
+      this,
+      "SsoadminAccountAssignment",
+      {
+        instanceArn: Fn.element(ssoAdminInstances.arns, 0),
+        permissionSetArn: pmSet.arn,
+        principalId: group.groupId,
+        principalType: "GROUP",
+        targetId: callerId.accountId,
+        targetType: "AWS_ACCOUNT",
+      }
+    );
+    new aws.identitystoreGroupMembership.IdentitystoreGroupMembership(
+      this,
+      "IdentitystoreGroupMembership",
+      {
+        groupId: group.groupId,
+        identityStoreId: Fn.element(ssoAdminInstances.identityStoreIds, 0),
+        memberId: user.userId,
       }
     );
   }
