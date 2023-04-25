@@ -33,13 +33,14 @@ class WorkforceManagement extends DefaultTerraformStack {
   constructor(scope: Construct, id: string) {
     super(scope, id);
     new aws.provider.AwsProvider(this, "provider");
-    const ids = new aws.dataAwsSsoadminInstances.DataAwsSsoadminInstances(
-      this,
-      "intances"
-    ).identityStoreIds;
+    const ssoAdminInstances =
+      new aws.dataAwsSsoadminInstances.DataAwsSsoadminInstances(
+        this,
+        "intances"
+      );
     new aws.identitystoreUser.IdentitystoreUser(this, "baran", {
       displayName: "baran",
-      identityStoreId: Fn.element(ids, 0),
+      identityStoreId: Fn.element(ssoAdminInstances.identityStoreIds, 0),
       name: {
         familyName: "Karaaslan",
         givenName: "Baran",
@@ -52,8 +53,25 @@ class WorkforceManagement extends DefaultTerraformStack {
     });
     new aws.identitystoreGroup.IdentitystoreGroup(this, "PlatformEngineers", {
       displayName: "Platform Engineers",
-      identityStoreId: Fn.element(ids, 1),
+      identityStoreId: Fn.element(ssoAdminInstances.identityStoreIds, 1),
     });
+    const pmSet = new aws.ssoadminPermissionSet.SsoadminPermissionSet(
+      this,
+      "PlatformEngineersPS",
+      {
+        instanceArn: Fn.element(ssoAdminInstances.arns, 0),
+        name: "PlatformEngineers",
+      }
+    );
+    new aws.ssoadminManagedPolicyAttachment.SsoadminManagedPolicyAttachment(
+      this,
+      "PlatformEngineersPSAttachment",
+      {
+        instanceArn: Fn.element(ssoAdminInstances.arns, 0),
+        managedPolicyArn: "arn:aws:iam::aws:policy/AdministratorAccess",
+        permissionSetArn: pmSet.arn,
+      }
+    );
   }
 }
 
