@@ -6,9 +6,9 @@ export class Network extends cdk.Stack {
   readonly vpc: Vpc;
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    this.vpc = new Vpc(this, "Vpc", {
+    this.vpc = new Vpc(this, "common-Vpc", {
       natGateways: 0,
-      vpcName: "main",
+      vpcName: "common",
     });
   }
 }
